@@ -1,11 +1,13 @@
 ﻿using EstateManager.Application.DTOs;
 using EstateManager.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EstateManager.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+//[Authorize]
 public class PropertiesController : ControllerBase
 {
     private readonly IPropertyService _propertyService;
@@ -15,23 +17,22 @@ public class PropertiesController : ControllerBase
         _propertyService = propertyService;
     }
 
-    // POST: api/properties
-    [HttpPost]
+    [HttpPost("create")]
     public async Task<IActionResult> Create([FromBody] CreatePropertyDto dto)
     {
         var property = await _propertyService.CreateAsync(dto);
         return CreatedAtAction(nameof(GetById), new { id = property.IdProperty }, property);
     }
 
-    // GET: api/properties
-    [HttpGet]
+   
+    [HttpGet("getbyfilter")]
     public async Task<IActionResult> GetAll([FromQuery] string? name, [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice)
     {
         var properties = await _propertyService.GetAllAsync(name, minPrice, maxPrice);
         return Ok(properties);
     }
 
-    // GET: api/properties/{id}
+   
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
@@ -40,8 +41,8 @@ public class PropertiesController : ControllerBase
         return Ok(property);
     }
 
-    // PUT: api/properties/{id}
-    [HttpPut("{id:int}")]
+     
+    [HttpPut("update")]
     public async Task<IActionResult> Update([FromBody] UpdatePropertyDto dto)
     {
         var property = await _propertyService.UpdateAsync(dto);
@@ -49,8 +50,8 @@ public class PropertiesController : ControllerBase
         return Ok(property);
     }
 
-    // PATCH: api/properties/{id}/price
-    [HttpPatch("/price")]
+ 
+    [HttpPatch("updateprice")]
     public async Task<IActionResult> ChangePrice([FromBody] ChangePriceDto dto)
     {
         var property = await _propertyService.ChangePriceAsync(dto);

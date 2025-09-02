@@ -1,7 +1,10 @@
-﻿using EstateManager.Application.DTOs;
+﻿using AutoMapper;
+using EstateManager.Application.DTOs;
 using EstateManager.Application.Interfaces;
 using EstateManager.Domain.Abstractions;
+using EstateManager.Domain.Constants;
 using EstateManager.Domain.Entities;
+using Microsoft.AspNetCore.Http;
 
 namespace EstateManager.Application.Services;
 
@@ -9,106 +12,130 @@ public class PropertyService : IPropertyService
 {
     private readonly IPropertyRepository _propertyRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;  
 
-    public PropertyService(IPropertyRepository propertyRepository, IUnitOfWork unitOfWork)
+    private const int MaxFileSizeBytes = 5 * 1024 * 1024; 
+
+    public PropertyService(IPropertyRepository propertyRepository, IUnitOfWork unitOfWork, IMapper mapper)
     {
         _propertyRepository = propertyRepository;
         _unitOfWork = unitOfWork;
+        _mapper = mapper;
     }
 
     public async Task<PropertyDto> CreateAsync(CreatePropertyDto dto)
     {
-        var property = new Property
+    
+        var property = _mapper.Map<Property>(dto);
+
+        
+        if (dto.InitialTrace != null)
         {
-            Address = dto.Address,
-            Name = dto.Name,
-            Price = dto.Price,
-            Year = dto.Year,
-            CodeInternal = dto.CodeInternal,
-            IdOwner = dto.IdOwner
-        };
+            var trace = _mapper.Map<PropertyTrace>(dto.InitialTrace);
+            trace.Name= PropertyTraceNames.Created;
+            property.Traces.Add(trace);
+        }
 
-        await _propertyRepository.AddAsync(property);
-        await _unitOfWork.CommitAsync();
+        await _propertyRepository.AddAsync(property).ConfigureAwait(false);
+        await _unitOfWork.CommitAsync().ConfigureAwait(false);
 
-        return MapToDto(property);
+        return _mapper.Map<PropertyDto>(property);
     }
+
+
 
     public async Task<PropertyDto?> UpdateAsync(UpdatePropertyDto dto)
     {
-        var property = await _propertyRepository.GetByIdAsync(dto.IdProperty);
+        var property = await GetPropertyByIdAsync(dto.IdProperty);
         if (property == null) return null;
+ 
+        var trace = new PropertyTrace
+        {
+            DateSale = DateTime.UtcNow,
+            Name = PropertyTraceNames.Updated,
+            Value = property.Price,
+            Tax = 0  
+        };
+        property.Traces.Add(trace);
 
-        property.Address = dto.Address;
-        property.Name = dto.Name;
-        property.Price = dto.Price;
-        property.Year = dto.Year;
+         
+        _mapper.Map(dto, property);
 
         await _propertyRepository.UpdateAsync(property);
         await _unitOfWork.CommitAsync();
 
-        return MapToDto(property);
+        return _mapper.Map<PropertyDto>(property);
     }
+
 
     public async Task<PropertyDto?> ChangePriceAsync(ChangePriceDto dto)
     {
-        var property = await _propertyRepository.GetByIdAsync(dto.IdProperty);
+        var property = await GetPropertyByIdAsync(dto.IdProperty);
         if (property == null) return null;
 
         property.Price = dto.Price;
 
-        await _propertyRepository.UpdateAsync(property);
-        await _unitOfWork.CommitAsync();
+        await _propertyRepository.UpdateAsync(property).ConfigureAwait(false);
+        await _unitOfWork.CommitAsync().ConfigureAwait(false);
 
-        return MapToDto(property);
+        return _mapper.Map<PropertyDto>(property);
     }
 
     public async Task<PropertyDto?> AddImageAsync(int propertyId, AddImageDto dto)
     {
-        var property = await _propertyRepository.GetByIdAsync(propertyId);
+        ValidateImage(dto);
+
+        var property = await GetPropertyByIdAsync(propertyId);
         if (property == null) return null;
-
-        using var ms = new MemoryStream();
-        await dto.File.CopyToAsync(ms);
-
-        var base64String = Convert.ToBase64String(ms.ToArray());
 
         var image = new PropertyImage
         {
             IdProperty = propertyId,
-            File = base64String,
+            File = await ConvertToBase64Async(dto.File),
             Enabled = true
         };
 
         property.Images.Add(image);
 
-        await _propertyRepository.UpdateAsync(property);
-        await _unitOfWork.CommitAsync();
+        await _propertyRepository.UpdateAsync(property).ConfigureAwait(false);
+        await _unitOfWork.CommitAsync().ConfigureAwait(false);
 
-        return MapToDto(property);
+        return _mapper.Map<PropertyDto>(property);
     }
 
     public async Task<IEnumerable<PropertyDto>> GetAllAsync(string? name, decimal? minPrice, decimal? maxPrice)
     {
-        var properties = await _propertyRepository.GetAllAsync(name, minPrice, maxPrice);
-        return properties.Select(MapToDto);
+        var properties = await _propertyRepository.GetAllAsync(name, minPrice, maxPrice)
+                                                  .ConfigureAwait(false);
+        return properties.Select(p => _mapper.Map<PropertyDto>(p));
     }
 
     public async Task<PropertyDto?> GetByIdAsync(int idProperty)
     {
         var property = await _propertyRepository.GetByIdAsync(idProperty);
-        return property == null ? null : MapToDto(property);
+        return property == null ? null : _mapper.Map<PropertyDto>(property);
     }
 
-    private PropertyDto MapToDto(Property property) =>
-      new PropertyDto
-      {
-          IdProperty = property.IdProperty,
-          Name = property.Name,
-          Address = property.Address,
-          Price = property.Price,
-          Year = property.Year,
-          IdOwner = property.IdOwner
-      };
+    #region Private helpers
 
+    private async Task<Property?> GetPropertyByIdAsync(int idProperty) =>
+        await _propertyRepository.GetByIdAsync(idProperty).ConfigureAwait(false);
+ 
+
+    private void ValidateImage(AddImageDto dto)
+    {
+        if (dto.File == null || dto.File.Length == 0)
+            throw new ArgumentException("File cannot be empty.");
+        if (dto.File.Length > MaxFileSizeBytes)
+            throw new ArgumentException("File exceeds maximum allowed size (5MB).");
+    }
+
+    private async Task<string> ConvertToBase64Async(IFormFile file)
+    {
+        using var ms = new MemoryStream();
+        await file.CopyToAsync(ms).ConfigureAwait(false);
+        return Convert.ToBase64String(ms.ToArray());
+    }
+
+    #endregion
 }
