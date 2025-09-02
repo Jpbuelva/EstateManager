@@ -21,9 +21,11 @@ public class PropertyService : IPropertyService
         var property = new Property
         {
             Address = dto.Address,
-            City = dto.City,
-            State = dto.State,
-            Price = dto.Price
+            Name = dto.Name,
+            Price = dto.Price,
+            Year = dto.Year,
+            CodeInternal = dto.CodeInternal,
+            IdOwner = dto.IdOwner
         };
 
         await _propertyRepository.AddAsync(property);
@@ -32,15 +34,15 @@ public class PropertyService : IPropertyService
         return MapToDto(property);
     }
 
-    public async Task<PropertyDto?> UpdateAsync(int id, UpdatePropertyDto dto)
+    public async Task<PropertyDto?> UpdateAsync(UpdatePropertyDto dto)
     {
-        var property = await _propertyRepository.GetByIdAsync(id);
+        var property = await _propertyRepository.GetByIdAsync(dto.IdProperty);
         if (property == null) return null;
 
         property.Address = dto.Address;
-        property.City = dto.City;
-        property.State = dto.State;
+        property.Name = dto.Name;
         property.Price = dto.Price;
+        property.Year = dto.Year;
 
         await _propertyRepository.UpdateAsync(property);
         await _unitOfWork.CommitAsync();
@@ -48,9 +50,9 @@ public class PropertyService : IPropertyService
         return MapToDto(property);
     }
 
-    public async Task<PropertyDto?> ChangePriceAsync(int id, ChangePriceDto dto)
+    public async Task<PropertyDto?> ChangePriceAsync(ChangePriceDto dto)
     {
-        var property = await _propertyRepository.GetByIdAsync(id);
+        var property = await _propertyRepository.GetByIdAsync(dto.IdProperty);
         if (property == null) return null;
 
         property.Price = dto.Price;
@@ -66,7 +68,18 @@ public class PropertyService : IPropertyService
         var property = await _propertyRepository.GetByIdAsync(propertyId);
         if (property == null) return null;
 
-        var image = new PropertyImage { Url = dto.Url, PropertyId = propertyId };
+        using var ms = new MemoryStream();
+        await dto.File.CopyToAsync(ms);
+
+        var base64String = Convert.ToBase64String(ms.ToArray());
+
+        var image = new PropertyImage
+        {
+            IdProperty = propertyId,
+            File = base64String,
+            Enabled = true
+        };
+
         property.Images.Add(image);
 
         await _propertyRepository.UpdateAsync(property);
@@ -75,26 +88,27 @@ public class PropertyService : IPropertyService
         return MapToDto(property);
     }
 
-    public async Task<IEnumerable<PropertyDto>> GetAllAsync(string? city, decimal? minPrice, decimal? maxPrice)
+    public async Task<IEnumerable<PropertyDto>> GetAllAsync(string? name, decimal? minPrice, decimal? maxPrice)
     {
-        var properties = await _propertyRepository.GetAllAsync(city, minPrice, maxPrice);
+        var properties = await _propertyRepository.GetAllAsync(name, minPrice, maxPrice);
         return properties.Select(MapToDto);
     }
 
-    public async Task<PropertyDto?> GetByIdAsync(int id)
+    public async Task<PropertyDto?> GetByIdAsync(int idProperty)
     {
-        var property = await _propertyRepository.GetByIdAsync(id);
+        var property = await _propertyRepository.GetByIdAsync(idProperty);
         return property == null ? null : MapToDto(property);
     }
 
     private PropertyDto MapToDto(Property property) =>
-        new PropertyDto
-        {
-            Id = property.Id,
-            Address = property.Address,
-            City = property.City,
-            State = property.State,
-            Price = property.Price,
-            CreatedAt = property.CreatedAt
-        };
+      new PropertyDto
+      {
+          IdProperty = property.IdProperty,
+          Name = property.Name,
+          Address = property.Address,
+          Price = property.Price,
+          Year = property.Year,
+          IdOwner = property.IdOwner
+      };
+
 }

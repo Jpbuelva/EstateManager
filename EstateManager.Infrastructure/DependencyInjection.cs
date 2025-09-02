@@ -11,10 +11,12 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        // 🔗 Configuración de EF Core con SQL Server
         services.AddDbContext<EstateDbContext>(options =>
             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
-        services.AddScoped<IPropertyRepository, PropertyRepository>();
+        // Repositorios
+        services.AddScoped<IPropertyRepository, PropertyRepository>(); 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         return services;

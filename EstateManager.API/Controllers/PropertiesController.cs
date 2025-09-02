@@ -20,14 +20,14 @@ public class PropertiesController : ControllerBase
     public async Task<IActionResult> Create([FromBody] CreatePropertyDto dto)
     {
         var property = await _propertyService.CreateAsync(dto);
-        return CreatedAtAction(nameof(GetById), new { id = property.Id }, property);
+        return CreatedAtAction(nameof(GetById), new { id = property.IdProperty }, property);
     }
 
     // GET: api/properties
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] string? city, [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice)
+    public async Task<IActionResult> GetAll([FromQuery] string? name, [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice)
     {
-        var properties = await _propertyService.GetAllAsync(city, minPrice, maxPrice);
+        var properties = await _propertyService.GetAllAsync(name, minPrice, maxPrice);
         return Ok(properties);
     }
 
@@ -42,28 +42,28 @@ public class PropertiesController : ControllerBase
 
     // PUT: api/properties/{id}
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdatePropertyDto dto)
+    public async Task<IActionResult> Update([FromBody] UpdatePropertyDto dto)
     {
-        var property = await _propertyService.UpdateAsync(id, dto);
+        var property = await _propertyService.UpdateAsync(dto);
         if (property == null) return NotFound();
         return Ok(property);
     }
 
     // PATCH: api/properties/{id}/price
-    [HttpPatch("{id:int}/price")]
-    public async Task<IActionResult> ChangePrice(int id, [FromBody] ChangePriceDto dto)
+    [HttpPatch("/price")]
+    public async Task<IActionResult> ChangePrice([FromBody] ChangePriceDto dto)
     {
-        var property = await _propertyService.ChangePriceAsync(id, dto);
+        var property = await _propertyService.ChangePriceAsync(dto);
         if (property == null) return NotFound();
         return Ok(property);
     }
 
-    // POST: api/properties/{id}/images
     [HttpPost("{id:int}/images")]
-    public async Task<IActionResult> AddImage(int id, [FromBody] AddImageDto dto)
+    public async Task<IActionResult> AddImage(int id, [FromForm] AddImageDto dto)
     {
         var property = await _propertyService.AddImageAsync(id, dto);
         if (property == null) return NotFound();
+
         return Ok(property);
     }
 }

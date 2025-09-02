@@ -1,6 +1,8 @@
-﻿namespace EstateManager.Application.DTOs;
+﻿using Microsoft.AspNetCore.Http;
+
+namespace EstateManager.Application.DTOs;
 
 public class AddImageDto
 {
-    public string Url { get; set; } = string.Empty;
+    public IFormFile File { get; set; } = default!;
 }

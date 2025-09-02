@@ -23,15 +23,15 @@ public class PropertyRepository : IPropertyRepository
     {
         return await _context.Properties
             .Include(p => p.Images)
-            .FirstOrDefaultAsync(p => p.Id == id);
+            .FirstOrDefaultAsync(p => p.IdProperty == id);
     }
 
-    public async Task<IEnumerable<Property>> GetAllAsync(string? city, decimal? minPrice, decimal? maxPrice)
+    public async Task<IEnumerable<Property>> GetAllAsync(string? name, decimal? minPrice, decimal? maxPrice)
     {
         var query = _context.Properties.Include(p => p.Images).AsQueryable();
 
-        if (!string.IsNullOrEmpty(city))
-            query = query.Where(p => p.City == city);
+        if (!string.IsNullOrEmpty(name))
+            query = query.Where(p => p.Name == name);
 
         if (minPrice.HasValue)
             query = query.Where(p => p.Price >= minPrice.Value);

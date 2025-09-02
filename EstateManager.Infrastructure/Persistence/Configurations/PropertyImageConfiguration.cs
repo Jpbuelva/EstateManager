@@ -8,18 +8,18 @@ public class PropertyImageConfiguration : IEntityTypeConfiguration<PropertyImage
 {
     public void Configure(EntityTypeBuilder<PropertyImage> builder)
     {
-        builder.HasKey(i => i.Id);
+        builder.HasKey(i => i.IdPropertyImage);
 
-        builder.Property(i => i.Id)
+        builder.Property(i => i.IdPropertyImage)
                .ValueGeneratedOnAdd(); 
 
-        builder.Property(i => i.Url)
+        builder.Property(i => i.File)
                .IsRequired()
                .HasMaxLength(500);
 
         builder.HasOne(i => i.Property)
                .WithMany(p => p.Images)
-               .HasForeignKey(i => i.PropertyId)
+               .HasForeignKey(i => i.IdProperty)
                .OnDelete(DeleteBehavior.Cascade);
     }
 }

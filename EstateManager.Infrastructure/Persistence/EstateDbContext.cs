@@ -1,7 +1,5 @@
 ﻿using EstateManager.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Reflection.Emit;
 
 namespace EstateManager.Infrastructure.Persistence;
 
@@ -11,6 +9,8 @@ public class EstateDbContext : DbContext
 
     public DbSet<Property> Properties { get; set; }
     public DbSet<PropertyImage> PropertyImages { get; set; }
+    public DbSet<Owner> Owners { get; set; }
+    public DbSet<PropertyTrace> PropertyTraces { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
