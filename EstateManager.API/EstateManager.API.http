@@ -1,0 +1,3 @@
+@EstateManager.API_HostAddress = http://localhost:5155
+
+ ## Get all estates
