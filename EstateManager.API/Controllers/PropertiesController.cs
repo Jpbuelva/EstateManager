@@ -7,7 +7,7 @@ namespace EstateManager.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-//[Authorize]
+[Authorize]
 public class PropertiesController : ControllerBase
 {
     private readonly IPropertyService _propertyService;
