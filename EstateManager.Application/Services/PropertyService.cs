@@ -36,8 +36,8 @@ public class PropertyService : IPropertyService
             property.Traces.Add(trace);
         }
 
-        await _propertyRepository.AddAsync(property).ConfigureAwait(false);
-        await _unitOfWork.CommitAsync().ConfigureAwait(false);
+        await _propertyRepository.AddAsync(property);
+        await _unitOfWork.CommitAsync();
 
         return _mapper.Map<PropertyDto>(property);
     }
@@ -75,8 +75,8 @@ public class PropertyService : IPropertyService
 
         property.Price = dto.Price;
 
-        await _propertyRepository.UpdateAsync(property).ConfigureAwait(false);
-        await _unitOfWork.CommitAsync().ConfigureAwait(false);
+        await _propertyRepository.UpdateAsync(property);
+        await _unitOfWork.CommitAsync();
 
         return _mapper.Map<PropertyDto>(property);
     }
@@ -97,8 +97,8 @@ public class PropertyService : IPropertyService
 
         property.Images.Add(image);
 
-        await _propertyRepository.UpdateAsync(property).ConfigureAwait(false);
-        await _unitOfWork.CommitAsync().ConfigureAwait(false);
+        await _propertyRepository.UpdateAsync(property);
+        await _unitOfWork.CommitAsync();
 
         return _mapper.Map<PropertyDto>(property);
     }
@@ -106,7 +106,7 @@ public class PropertyService : IPropertyService
     public async Task<IEnumerable<PropertyDto>> GetAllAsync(string? name, decimal? minPrice, decimal? maxPrice)
     {
         var properties = await _propertyRepository.GetAllAsync(name, minPrice, maxPrice)
-                                                  .ConfigureAwait(false);
+                                                  ;
         return properties.Select(p => _mapper.Map<PropertyDto>(p));
     }
 
@@ -119,7 +119,7 @@ public class PropertyService : IPropertyService
     #region Private helpers
 
     private async Task<Property?> GetPropertyByIdAsync(int idProperty) =>
-        await _propertyRepository.GetByIdAsync(idProperty).ConfigureAwait(false);
+        await _propertyRepository.GetByIdAsync(idProperty);
  
 
     private void ValidateImage(AddImageDto dto)
@@ -133,7 +133,7 @@ public class PropertyService : IPropertyService
     private async Task<string> ConvertToBase64Async(IFormFile file)
     {
         using var ms = new MemoryStream();
-        await file.CopyToAsync(ms).ConfigureAwait(false);
+        await file.CopyToAsync(ms);
         return Convert.ToBase64String(ms.ToArray());
     }
 
